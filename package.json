@@ -1,0 +1,23 @@
+{
+  "name": "gulp-env-modify",
+  "version": "1.0.0",
+  "description": "Query, update, and version control your .env files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marknotton/gulp-env-modify.git"
+  },
+  "keywords": [
+    "gulp",
+    ".env",
+  ],
+  "author": "Mark Notton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marknotton/gulp-env-modify/issues"
+  },
+  "homepage": "https://github.com/marknotton/gulp-env-modify"
+}
