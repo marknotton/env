@@ -18,6 +18,7 @@ module.exports.getVersion        = getVersion;
 module.exports.getData           = getData;
 module.exports.getFile           = getFile;
 module.exports.updateVersionName = updateVersionName;
+module.exports.getVersionName    = getVersionName;
 module.exports.deleteVersions    = deleteVersions;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,6 +176,37 @@ function updateVersion(variable, force) {
 };
 
 /**
+ * Get the name of a file with the current version (no increments)
+ * @param  {string} file     [description]
+ * @param  {string} variable Define the variable you want to increment.
+ *                           If a variable is not defined the file extension will be used
+ * @param  {bool} end        If true, the version will be addted just before the file extension
+ *                           Otherwise it will be placed before the first fullstip found in the filename
+ * @return {string}          Filename with version
+ */
+function getVersionName(file, variable, end) {
+
+  let extension = file.split('.').pop();
+
+  let version = getVersion((variable || extension)) || '';
+
+  if ( typeof version !== 'undefined') {
+    if (!end) {
+      var file = file.split(".");
+      var name = file[0];
+      file.shift();
+      return name + '.v' + version + '.' + file.join('.');
+    } else {
+      return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
+    }
+
+  } else {
+    return file;
+  }
+
+}
+
+/**
  * Update the version name of a file
  * @param  {string} file     [description]
  * @param  {string} variable Define the variable you want to increment.
@@ -194,7 +226,7 @@ function updateVersionName(file, variable, end) {
       var file = file.split(".");
       var name = file[0];
       file.shift();
-      return name + version + '.' + file.join('.');
+      return name + '.v' + version + '.' + file.join('.');
     } else {
       return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
     }
@@ -213,6 +245,11 @@ function updateVersionName(file, variable, end) {
 function getVersion(variable) {
   return parseInt(getVariable(variable.toUpperCase() + '_VERSION'));
 };
+
+
+function _getVersionFileName(file, variable, end) {
+
+}
 
 /**
  * Delete a set amount of versions to avoid large archives
