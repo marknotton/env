@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Public Functions
+// Settings
 ////////////////////////////////////////////////////////////////////////////////
 
 'use strict'
@@ -8,105 +8,222 @@ const through = require('through2'),
       fs = require('fs'),
       path = require('path')
 
-let cache = null;
+let cached = [];
+let envFilePath = path.resolve(process.cwd(), '.env');
 
-module.exports.get = getEnvObject;
-module.exports.file = getEnvFile;
-module.exports.version = envUpdateVersion;
-module.exports.add = addVersionToString;
+module.exports.updateVersion     = updateVersion;
+module.exports.addVariable       = addVariable;
+module.exports.getVariable       = getVariable;
+module.exports.getVersion        = getVersion;
+module.exports.getData           = getData;
+module.exports.getFile           = getFile;
+module.exports.updateVersionName = updateVersionName;
+module.exports.deleteVersions    = deleteVersions;
 
-function addVersionToString(string, version) {
-  return string.replace(/(\.[\w\d_-]+)$/i, version+'$1');
-}
+////////////////////////////////////////////////////////////////////////////////
+// Get .env file information
+////////////////////////////////////////////////////////////////////////////////
 
-function envUpdateVersion(type, force) {
+/**
+ * Get the .env file data as a string
+ * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
+ * @return {string}
+ */
+function getFile(envPath) {
 
-  type = type.toUpperCase() + '_VERSION';
+  envPath = typeof envPath !== 'undefined' ? envPath : '.env';
 
-  let envContent = getEnvFile();
-  let envObj     = getEnvObject();
-  let newVersion = 1;
+  try {
 
-  if (type in envObj) {
-    var currentVersion = parseInt(envObj[type].replace(/['"]+/g, ''));
-    newVersion = currentVersion + 1;
-    envContent = envContent.replace(`${type}="${currentVersion}"`, `${type}="${force || newVersion}"`)
+    if ( cached.file == null) {
+      envFilePath = path.resolve(process.cwd(), envPath);
+      cached.file = fs.readFileSync(envFilePath, { encoding : 'utf8'})
+    }
+
+    return cached.file;
+
+  } catch (e) {
+
+    return { error: e }
+
+  }
+};
+
+/**
+ * Get the .env file as an object
+ * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
+ * @see https://github.com/motdotla/dotenv/blob/master/lib/main.js
+ * @return {object}
+ */
+function getData(envPath) {
+  try {
+
+    if ( cached.data == null) {
+
+      cached.data = [];
+
+      // convert Buffers before splitting into lines and processing
+      getFile(envPath).toString().split('\n').forEach(function (line) {
+        // matching "KEY' and 'VAL' in 'KEY=VAL'
+        const keyValueArr = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/)
+        // matched?
+        if (keyValueArr != null) {
+          const key = keyValueArr[1]
+
+          // default undefined or missing values to empty string
+          let value = keyValueArr[2] || ''
+
+          // expand newlines in quoted values
+          const len = value ? value.length : 0
+          if (len > 0 && value.charAt(0) === '"' && value.charAt(len - 1) === '"') {
+            value = value.replace(/\\n/gm, '\n')
+          }
+
+          // remove any surrounding quotes and extra spaces
+          value = value.replace(/(^['"]|['"]$)/g, '').trim()
+
+          cached.data[key] = value
+        }
+      })
+
+      Object.keys(cached.data).forEach(function (key) {
+        if (!process.env.hasOwnProperty(key)) {
+          process.env[key] = cached.data[key]
+        }
+      })
+
+    }
+
+    return cached.data;
+
+  } catch (e) {
+
+    return { error: e }
+
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Get and Add variables
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Add a variable and it's value
+ * @param  {string} variable The variable name
+ * @param  {mixed}  value    The variable value
+ */
+function addVariable(variable, value) {
+  cached.file = `${cached.file}\n${variable}="${value}"`;
+};
+
+/**
+ * Get a specific variable
+ * @param  {[type]} variable Enter the variable you want to get
+ * @return {string}
+ */
+function getVariable(variable) {
+  if ( cached.data == null ) {
+    getData();
+  }
+
+  if (variable.toUpperCase() in cached.data ) {
+    return cached.data[variable.toUpperCase()];
+  } else if (variable in cached.data) {
+    return cached.data[variable];
   } else {
-    envContent = `${envContent}\n${type}="${force || newVersion}"`;
+    console.warn(variable + " was not found in .env");
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Version Functions
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Update the version number of an environment variable
+ * @param  {string} type  Choose a prefix to the _VERSION env variable
+ * @param  {int} force    By default, this function will inciment by one
+ *                        each time this functon is called. Hoever, you can update
+ *                        a variable to a specific number with this.
+ * @return {int}          Returns the new version number.
+ */
+function updateVersion(variable, force) {
+
+  if ( cached.data == null ) {
+    getData();
+  }
+
+  let newVersion = 1;
+  let currentVersion = getVersion(variable) || undefined;
+  let type = variable.toUpperCase() + '_VERSION';
+
+  if (typeof currentVersion !== 'undefined') {
+    newVersion = currentVersion + 1;
+    cached.file = cached.file.replace(`${type}="${currentVersion}"`, `${type}="${force || newVersion}"`)
+  } else {
+    addVariable(type, (force || newVersion))
   }
 
   try {
-    fs.writeFileSync(path.resolve(process.cwd(), '.env'), envContent || '');
+    fs.writeFileSync(envFilePath, cached.file || '');
   } catch (e) {
     return { error: e }
   }
 
   return newVersion;
 
-}
+};
 
-function getEnvFile(envPath) {
+/**
+ * Update the version name of a file
+ * @param  {string} file     [description]
+ * @param  {string} variable Define the variable you want to increment.
+ *                           If a variable is not defined the file extension will be used
+ * @param  {bool} end        If true, the version will be addted just before the file extension
+ *                           Otherwise it will be placed before the first fullstip found in the filename
+ * @return {string}          Filename with version
+ */
+function updateVersionName(file, variable, end) {
 
-  envPath = typeof envPath !== 'undefined' ? envPath : '.env';
+  let extension = file.split('.').pop();
 
-  try {
+  let version = updateVersion((variable || extension)) || '';
 
-    if ( cache == null) {
-      let filePath = path.resolve(process.cwd(), envPath);
-      console.log(filePath)
-      cache = fs.readFileSync(filePath, { encoding : 'utf8'})
+  if ( typeof version !== 'undefined') {
+    if (!end) {
+      var file = file.split(".");
+      var name = file[0];
+      file.shift();
+      return name + version + '.' + file.join('.');
+    } else {
+      return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
     }
 
-    return cache;
-
-  } catch (e) {
-
-    return { error: e }
-
+  } else {
+    return file;
   }
+
 }
 
-function getEnvObject() {
+/**
+ * Get version number of a variable
+ * @param  {string} variable Only refer to the variable name, you can ommit the _VERSION
+ * @return {int}             The variable version number
+ */
+function getVersion(variable) {
+  return parseInt(getVariable(variable.toUpperCase() + '_VERSION'));
+};
 
-  try {
-
-    const obj = {}
-
-    // convert Buffers before splitting into lines and processing
-    getEnvFile().toString().split('\n').forEach(function (line) {
-      // matching "KEY' and 'VAL' in 'KEY=VAL'
-      const keyValueArr = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/)
-      // matched?
-      if (keyValueArr != null) {
-        const key = keyValueArr[1]
-
-        // default undefined or missing values to empty string
-        let value = keyValueArr[2] || ''
-
-        // expand newlines in quoted values
-        const len = value ? value.length : 0
-        if (len > 0 && value.charAt(0) === '"' && value.charAt(len - 1) === '"') {
-          value = value.replace(/\\n/gm, '\n')
-        }
-
-        // remove any surrounding quotes and extra spaces
-        value = value.replace(/(^['"]|['"]$)/g, '').trim()
-
-        obj[key] = value
-      }
-    })
-
-    Object.keys(obj).forEach(function (key) {
-      if (!process.env.hasOwnProperty(key)) {
-        process.env[key] = obj[key]
-      }
-    })
-
-    return obj;
-
-  } catch (e) {
-
-    return { error: e }
-
-  }
-}
+/**
+ * Delete a set amount of versions to avoid large archives
+ * @param  {string} file     The Original filename you want to manage. Don't include version number.
+ * @param  {string} variable The variable this file versioning refers to
+ * @param  {int}    keep   The amount of versions you want to keep
+ */
+function deleteVersions(file, variable, keep) {
+  var fileToDelete = 'public/assets/js/main.min10.js';
+  // TODO: Get all files that share the name despite the versiob
+  // TODO: Add all deleatble files in an array
+  // TODO Loop through the array with this function:
+  fs.unlinkSync(fileToDelete);
+};
