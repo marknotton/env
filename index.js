@@ -249,8 +249,31 @@ function getVersion(variable) {
  * @param  {string} variable The variable this file versioning refers to
  * @param  {int}    keep   The amount of versions you want to keep
  */
-function deleteVersions(file, variable, keep) {
-  return fs.readdirSync(file);
+function deleteVersions(fileName, variable, keep) {
+  var files = fs.readdirSync(fileName);
+
+  var obj = [];
+  console.log(typeof obj);
+  files.forEach((file) => {
+    var version = file.match(/(?<=\.v)(.*?)(?=\.)/g)[0];
+    var clean = file.replace(/(?<=\.)(.*?)(?=\.)/, '').replace('..', '.');
+
+    if ( typeof version !== 'undefined') {
+      // obj.clean.version = file;
+
+      if (clean in obj) {
+        // obj[clean] = {version};
+        obj[clean] = obj[clean] +', '+ version
+      } else {
+        obj[clean] = []
+        // obj[clean] = {ver : version};
+        // obj[clean] = version;
+      }
+    }
+  });
+  console.log(obj);
+
+  //
   // var fileToDelete = 'public/assets/js/main.min10.js';
   // TODO: Get all files that share the name despite the versiob
   // TODO: Add all deleatble files in an array
