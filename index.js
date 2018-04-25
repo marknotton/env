@@ -56,7 +56,7 @@ function getFile(envPath) {
  * @see https://github.com/motdotla/dotenv/blob/master/lib/main.js
  * @return {object}
  */
-function getData(envPath) {
+function getData(envPath, force) {
   try {
 
     if ( cached.data == null) {
@@ -131,8 +131,6 @@ function getVariable(variable) {
     return cached.data[variable.toUpperCase()];
   } else if (variable in cached.data) {
     return cached.data[variable];
-  } else {
-    console.warn(variable + " was not found in .env");
   }
 };
 
@@ -143,9 +141,9 @@ function getVariable(variable) {
 /**
  * Update the version number of an environment variable
  * @param  {string} type  Choose a prefix to the _VERSION env variable
- * @param  {int} force    By default, this function will inciment by one
+ * @param  {int} force    By default, this updateVersion function will incriment by one
  *                        each time this functon is called. Hoever, you can update
- *                        a variable to a specific number with this.
+ *                        a variable to a specific number with force.
  * @return {int}          Returns the new version number.
  */
 function updateVersion(variable, force) {
@@ -171,12 +169,14 @@ function updateVersion(variable, force) {
     return { error: e }
   }
 
+  cached.data[type] = force || newVersion;
+
   return newVersion;
 
 };
 
 /**
- * Get the name of a file with the current version (no increments)
+ * Get the version name of the file without incrementing the version
  * @param  {string} file     [description]
  * @param  {string} variable Define the variable you want to increment.
  *                           If a variable is not defined the file extension will be used
@@ -190,19 +190,7 @@ function getVersionName(file, variable, end) {
 
   let version = getVersion((variable || extension)) || '';
 
-  if ( typeof version !== 'undefined') {
-    if (!end) {
-      var file = file.split(".");
-      var name = file[0];
-      file.shift();
-      return name + '.v' + version + '.' + file.join('.');
-    } else {
-      return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
-    }
-
-  } else {
-    return file;
-  }
+  return addVersionToFilename(file, version, end);
 
 }
 
@@ -221,16 +209,25 @@ function updateVersionName(file, variable, end) {
 
   let version = updateVersion((variable || extension)) || '';
 
-  if ( typeof version !== 'undefined') {
-    if (!end) {
-      var file = file.split(".");
-      var name = file[0];
-      file.shift();
-      return name + '.v' + version + '.' + file.join('.');
+  return addVersionToFilename(file, version, end);
+
+}
+
+/**
+ * Do some fancy regex stuff to place the version number within the filename string
+ * @param {string} file    filename
+ * @param {int}    version the version number you want to add
+ * @param {bool}   end     If true, the version will be addted just before the file extension
+ *                         Otherwise it will be placed before the first fullstip found in the filename
+ */
+function addVersionToFilename(file, version, end) {
+  if ( typeof version !== 'undefined' ) {
+    version = '.v' + version;
+    if (typeof end == 'undefined' || end === true) {
+      return file.replace(/^([^.]*)(.*)/, '$1'+ version +'$2');
     } else {
       return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
     }
-
   } else {
     return file;
   }
@@ -246,11 +243,6 @@ function getVersion(variable) {
   return parseInt(getVariable(variable.toUpperCase() + '_VERSION'));
 };
 
-
-function _getVersionFileName(file, variable, end) {
-
-}
-
 /**
  * Delete a set amount of versions to avoid large archives
  * @param  {string} file     The Original filename you want to manage. Don't include version number.
@@ -258,9 +250,10 @@ function _getVersionFileName(file, variable, end) {
  * @param  {int}    keep   The amount of versions you want to keep
  */
 function deleteVersions(file, variable, keep) {
-  var fileToDelete = 'public/assets/js/main.min10.js';
+  return fs.readdirSync(file);
+  // var fileToDelete = 'public/assets/js/main.min10.js';
   // TODO: Get all files that share the name despite the versiob
   // TODO: Add all deleatble files in an array
   // TODO Loop through the array with this function:
-  fs.unlinkSync(fileToDelete);
+  // fs.unlinkSync(fileToDelete);
 };
