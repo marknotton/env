@@ -9,14 +9,15 @@ const through = require('through2'),
       path = require('path')
 
 let cached = [];
+let defaultKeep = 5;
 let envFilePath = path.resolve(process.cwd(), '.env');
 
-module.exports.updateVersion     = updateVersion;
+module.exports.getFile           = getFile;
+module.exports.getData           = getData;
 module.exports.addVariable       = addVariable;
 module.exports.getVariable       = getVariable;
 module.exports.getVersion        = getVersion;
-module.exports.getData           = getData;
-module.exports.getFile           = getFile;
+module.exports.updateVersion     = updateVersion;
 module.exports.updateVersionName = updateVersionName;
 module.exports.getVersionName    = getVersionName;
 module.exports.deleteVersions    = deleteVersions;
@@ -56,7 +57,7 @@ function getFile(envPath) {
  * @see https://github.com/motdotla/dotenv/blob/master/lib/main.js
  * @return {object}
  */
-function getData(envPath, force) {
+function getData(envPath) {
   try {
 
     if ( cached.data == null) {
@@ -114,7 +115,16 @@ function getData(envPath, force) {
  * @param  {mixed}  value    The variable value
  */
 function addVariable(variable, value) {
+
   cached.file = `${cached.file}\n${variable}="${value}"`;
+
+  try {
+    fs.writeFileSync(envFilePath, cached.file || '');
+  } catch (e) {
+    return { error: e }
+  }
+
+  cached.data[variable] = value;
 };
 
 /**
@@ -139,6 +149,16 @@ function getVariable(variable) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Get version number of a variable
+ * @param  {string} variable Only refer to the variable name, you can ommit the _VERSION
+ * @return {int}             The variable version number
+ */
+function getVersion(variable) {
+  return parseInt(getVariable(variable.toUpperCase() + '_VERSION'));
+};
+
+
+/**
  * Update the version number of an environment variable
  * @param  {string} type  Choose a prefix to the _VERSION env variable
  * @param  {int} force    By default, this updateVersion function will incriment by one
@@ -160,7 +180,7 @@ function updateVersion(variable, force) {
     newVersion = currentVersion + 1;
     cached.file = cached.file.replace(`${type}="${currentVersion}"`, `${type}="${force || newVersion}"`)
   } else {
-    addVariable(type, (force || newVersion))
+    cached.file = `${cached.file}\n${type}="${force || newVersion}"`;
   }
 
   try {
@@ -234,32 +254,26 @@ function addVersionToFilename(file, version, end) {
 
 }
 
-/**
- * Get version number of a variable
- * @param  {string} variable Only refer to the variable name, you can ommit the _VERSION
- * @return {int}             The variable version number
- */
-function getVersion(variable) {
-  return parseInt(getVariable(variable.toUpperCase() + '_VERSION'));
-};
 
 /**
  * Delete a set amount of versions to avoid large archives
- * @param  {string} dirName     The Original filename you want to manage. Don't include version number.
- * @param  {string} variable The variable this file versioning refers to
- * @param  {int}    keep   The amount of versions you want to keep
+ * @param  {string} directory   The Original filename you want to manage. Don't include version number.
+ * @param  {string} variable  The variable this file versioning refers to
+ * @param  {int}    keep      The amount of versions you want to keep
+ * @return {array}  Returns an array of the files that were deleted
  */
-function deleteVersions(dirName, variable, keep) {
-  var files = fs.readdirSync(dirName);
+function deleteVersions(directory, variable, keep) {
+  var files = fs.readdirSync(directory);
   var obj = [];
+  var deleted = [];
+  var log = "";
+  var keep = typeof keep !== 'undefined' ? keep : defaultKeep;
 
   files.forEach((file) => {
     var version = parseInt(file.match(/(?<=\.v)(.*?)(?=\.)/g)[0]);
     var clean = file.replace(/(?<=\.)(.*?)(?=\.)/, '').replace('..', '.');
 
     if ( typeof version !== 'undefined') {
-      // obj.clean.version = file;
-
       if (clean in obj) {
         obj[clean].push(version);
       } else {
@@ -270,13 +284,15 @@ function deleteVersions(dirName, variable, keep) {
 
   for (var key in obj) {
     if (obj.hasOwnProperty(key)) {
-      var versions = obj[key].sort((a, b) => a - b).slice(0, -(5-1));
+      var versions = obj[key].sort((a, b) => a - b).slice(0, -(keep-1));
       for (var version in versions) {
-         var deleteFile = dirName + key.replace(/^([^.]*)(.*)/, '$1'+ '.v' +versions[version] +'$2');
-         console.log('Deleting ' + deleteFile);
+        var deleteFile = directory + key.replace(/^([^.]*)(.*)/, '$1'+ '.v' +versions[version] +'$2');
+        deleted.push(deleteFile);
         fs.unlinkSync(deleteFile);
       }
     }
   }
+
+  return deleted;
 
 };

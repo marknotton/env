@@ -1,6 +1,6 @@
 {
   "name": "gulp-env-modify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Query, update, and version control your .env files.",
   "main": "index.js",
   "scripts": {
