@@ -26,6 +26,7 @@ Get the .env file contents as a string
 *First parameter can be the path to your .env file relative to the gulpfile.js*
 
 ------
+
 #### Get Data [*object*]
 
 Get the .env file content with all the variables and values passed into an object
@@ -33,19 +34,25 @@ Get the .env file content with all the variables and values passed into an objec
 `envmod.getData()`
 
 *First parameter can be the path to your .env file relative to the gulpfile.js*
+
 ------
+
 #### Add Variable
 
 Add a variable and value to the .env file. Variable will be created if it isn't found. It will be overwritten if it does exists.
 
 `envmod.addVariable(variable, value)`
+
 ------
+
 #### Get Variable [*string*]
 
 Get variable from .env file.
 
 `envmod.getVariable(variable)`
+
 ------
+
 ## Versioning
 
 There are a few options to manage variables that are suffixed with "_VERSION".  The purpose for this (and the reason I built this plugin), is to increment a variable each time a certain gulp task is called. Allowing me to generate unique file names for concatenated files. Ultimately this helps avoid browsers from caching old files whilst avoiding the use of ugly and unreliable url parameters.
@@ -55,7 +62,9 @@ There are a few options to manage variables that are suffixed with "_VERSION".  
 Get the version number of a variable
 
 `envmod.getVersion(variable)`
+
 ------
+
 #### Update Version  [*int*]
 
 Update the version number of a variable by incrementing the number by one.
@@ -65,7 +74,9 @@ Update the version number of a variable by incrementing the number by one.
 | force | int | By default this function will increment by one. However, you can update a variable to a specific number.|
 
 `envmod.updateVersion(variable)`
+
 ------
+
 #### Get Version Name
 
 To modify the filename for your gulp task, you will need to generate a dynamic name to match your latest version. This gives you that new filename.
@@ -85,11 +96,15 @@ This will look for the `JS_VERSION=12` in your .env file and return a string tha
 If you set the `end` boolean to false, this would be returned instead:
 
 `main.min.v12.js`
+
 ------
+
 #### Update Version Name
 
 This essentially does the exact same thing as getVersionName, only it will increment the version in the .env file before returning the name filename.
+
 ------
+
 #### Delete Versions
 
 Versioned files may start to get overwhelming and unnecessary. This lets you keep a set amount of versioned files.
@@ -100,6 +115,8 @@ Versioned files may start to get overwhelming and unnecessary. This lets you kee
 | keep | int | Define how many versions of your versioned files you want to keep. By default this is set to 5.|
 
 `envmod.deleteVersions('assets/js/', 3)`
+
 ------
+
 ### Credit
 Couldn't have built this without [gulp-dotenv](https://github.com/pine/gulp-dotenv). Thank you.
