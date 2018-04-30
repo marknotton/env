@@ -5,8 +5,7 @@
 'use strict'
 
 // Dependencies
-const through = require('through2'),
-      fs = require('fs'),
+const fs = require('fs'),
       path = require('path')
 
 // Defaults
