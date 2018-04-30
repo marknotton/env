@@ -258,37 +258,49 @@ function addVersionToFilename(file, version, end) {
 /**
  * Delete a set amount of versions to avoid large archives
  * @param  {string} directory   The Original filename you want to manage. Don't include version number.
- * @param  {string} variable  The variable this file versioning refers to
+ * @param  {string} original  Set the original filename so the comparison can match files after the version number has be varified
  * @param  {int}    keep      The amount of versions you want to keep
  * @return {array}  Returns an array of the files that were deleted
  */
-function deleteVersions(directory, variable, keep) {
-  var files = fs.readdirSync(directory);
+function deleteVersions(directory, original, keep) {
+
+  if ( directory === 'undefined') {
+    console.warn('You must provide the directory path to look for your versioned files');
+    return [];
+  }
+
+  if ( original === 'undefined') {
+    console.warn('You must provide the original filename so that a comparison can be made before deleting files in ' + directory);
+    return [];
+  }
+
+  const files = fs.readdirSync(directory);
+  var keep = typeof keep !== 'undefined' ? keep : defaultKeep;
   var obj = [];
   var deleted = [];
-  var log = "";
-  var keep = typeof keep !== 'undefined' ? keep : defaultKeep;
 
-  files.forEach((file) => {
-    var version = parseInt(file.match(/(?<=\.v)(.*?)(?=\.)/g)[0]);
-    var clean = file.replace(/(?<=\.)(.*?)(?=\.)/, '').replace('..', '.');
+  if ( files.length ) {
 
-    if ( typeof version !== 'undefined') {
-      if (clean in obj) {
-        obj[clean].push(version);
-      } else {
-        obj[clean] = [version];
+    files.forEach((file) => {
+      var version = parseInt(file.match(/(?<=\.v)(.*?)(?=\.)/g));
+      var clean = file.replace(/(?<=\.)(.*?)(?=\.)/, '').replace('..', '.');
+      if ( typeof version !== 'undefined' && !isNaN(version)) {
+        if (clean == original && clean in obj) {
+          obj[clean].push(version);
+        } else {
+          obj[clean] = [version];
+        }
       }
-    }
-  });
+    });
 
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      var versions = obj[key].sort((a, b) => a - b).slice(0, -(keep-1));
-      for (var version in versions) {
-        var deleteFile = directory + key.replace(/^([^.]*)(.*)/, '$1'+ '.v' +versions[version] +'$2');
-        deleted.push(deleteFile);
-        fs.unlinkSync(deleteFile);
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        var versions = obj[key].sort((a, b) => a - b).slice(0, -(keep-1));
+        for (var version in versions) {
+          var deleteFile = directory + key.replace(/^([^.]*)(.*)/, '$1'+ '.v' +versions[version] +'$2');
+          deleted.push(deleteFile);
+          fs.unlinkSync(deleteFile);
+        }
       }
     }
   }
