@@ -2,7 +2,7 @@
 
 # Gulp Env Modify
 
-Read, add, edit, and remove variables from your .env file. You can also automatically increment variables if they are a number. Designed for hard versioning production files.
+Add, edit, delete and read variables from a .env file. There is also functionality to help manage version named files.
 
 ### Installation
 ```
@@ -16,8 +16,9 @@ console.log(env)
 ```
 ------
 
-## Basics
-#### Get File [*string*]
+## Data functions
+
+### Get File [*string*]
 
 Get the .env file contents as a string
 
@@ -27,7 +28,7 @@ Get the .env file contents as a string
 
 ------
 
-#### Get Data [*object*]
+### Get Data [*object*]
 
 Get the .env file content with all the variables and values passed into an object
 
@@ -37,15 +38,17 @@ Get the .env file content with all the variables and values passed into an objec
 
 ------
 
-#### Add Variable
+## Get & Set functions
+
+### Set Variable
 
 Add a variable and value to the .env file. Variable will be created if it isn't found. It will be overwritten if it does exists.
 
-`envmod.addVariable(variable, value)`
+`envmod.setVariable(variable, value)`
 
 ------
 
-#### Get Variable [*string*]
+### Get Variable [*string*]
 
 Get variable from .env file.
 
@@ -53,11 +56,11 @@ Get variable from .env file.
 
 ------
 
-## Versioning
+## Versioning functions
 
 There are a few options to manage variables that are suffixed with "_VERSION".  The purpose for this (and the reason I built this plugin), is to increment a variable each time a certain gulp task is called. Allowing me to generate unique file names for concatenated files. Ultimately this helps avoid browsers from caching old files whilst avoiding the use of ugly and unreliable url parameters.
 
-#### Get Version [*int*]
+### Get Version [*int*]
 
 Get the version number of a variable
 
@@ -65,7 +68,7 @@ Get the version number of a variable
 
 ------
 
-#### Update Version  [*int*]
+### Update Version  [*int*]
 
 Update the version number of a variable by incrementing the number by one.
 | Parameter | Type | Description |
@@ -77,7 +80,7 @@ Update the version number of a variable by incrementing the number by one.
 
 ------
 
-#### Get Version Name
+### Get Version Name
 
 To modify the filename for your gulp task, you will need to generate a dynamic name to match your latest version. This gives you that new filename.
 
@@ -99,22 +102,23 @@ If you set the `end` boolean to false, this would be returned instead:
 
 ------
 
-#### Update Version Name
+### Update Version Name
 
 This essentially does the exact same thing as getVersionName, only it will increment the version in the .env file before returning the name filename.
 
 ------
 
-#### Delete Versions
+### Delete Versions
 
 Versioned files may start to get overwhelming and unnecessary. This lets you keep a set amount of versioned files.
 
 | Parameter | Type | Description |
 | - | - | - |
 | directory | string |  Relative to your gulpfile.js, point to where your versioned files are stored.  |
+| original | string | Pass the original filename so the comparison can match files after the version number has be verified |
 | keep | int | Define how many versions of your versioned files you want to keep. By default this is set to 5.|
 
-`envmod.deleteVersions('assets/js/', 3)`
+`envmod.deleteVersions('assets/js/', 'main.min.js', 3)`
 
 ------
 

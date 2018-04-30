@@ -4,18 +4,25 @@
 
 'use strict'
 
+// Dependencies
 const through = require('through2'),
       fs = require('fs'),
       path = require('path')
 
+// Defaults
 let cached = [];
 let defaultKeep = 5;
 let envFilePath = path.resolve(process.cwd(), '.env');
 
+// Data functions
 module.exports.getFile           = getFile;
 module.exports.getData           = getData;
-module.exports.addVariable       = addVariable;
+
+// Add / Get functions
+module.exports.setVariable       = setVariable;
 module.exports.getVariable       = getVariable;
+
+// Version functions
 module.exports.getVersion        = getVersion;
 module.exports.updateVersion     = updateVersion;
 module.exports.updateVersionName = updateVersionName;
@@ -53,8 +60,8 @@ function getFile(envPath) {
 
 /**
  * Get the .env file as an object
+ * @see    https://github.com/motdotla/dotenv/blob/master/lib/main.js
  * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
- * @see https://github.com/motdotla/dotenv/blob/master/lib/main.js
  * @return {object}
  */
 function getData(envPath) {
@@ -110,13 +117,14 @@ function getData(envPath) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Add a variable and it's value
+ * Set a variable and it's value
  * @param  {string} variable The variable name
  * @param  {mixed}  value    The variable value
  */
-function addVariable(variable, value) {
+function setVariable(variable, value) {
 
   cached.file = `${cached.file}\n${variable}="${value}"`;
+  cached.data[variable] = value;
 
   try {
     fs.writeFileSync(envFilePath, cached.file || '');
@@ -124,12 +132,11 @@ function addVariable(variable, value) {
     return { error: e }
   }
 
-  cached.data[variable] = value;
 };
 
 /**
  * Get a specific variable
- * @param  {[type]} variable Enter the variable you want to get
+ * @param  {string} variable Enter the variable you want to get
  * @return {string}
  */
 function getVariable(variable) {
@@ -160,8 +167,8 @@ function getVersion(variable) {
 
 /**
  * Update the version number of an environment variable
- * @param  {string} type  Choose a prefix to the _VERSION env variable
- * @param  {int} force    By default, this updateVersion function will incriment by one
+ * @param  {string} type  Choose a variable name that is prefixed to _VERSION
+ * @param  {int}    force By default, this function will incriment versions by one
  *                        each time this functon is called. Hoever, you can update
  *                        a variable to a specific number with force.
  * @return {int}          Returns the new version number.
@@ -183,13 +190,13 @@ function updateVersion(variable, force) {
     cached.file = `${cached.file}\n${type}="${force || newVersion}"`;
   }
 
+  cached.data[type] = force || newVersion;
+
   try {
     fs.writeFileSync(envFilePath, cached.file || '');
   } catch (e) {
     return { error: e }
   }
-
-  cached.data[type] = force || newVersion;
 
   return newVersion;
 
@@ -200,7 +207,7 @@ function updateVersion(variable, force) {
  * @param  {string} file     [description]
  * @param  {string} variable Define the variable you want to increment.
  *                           If a variable is not defined the file extension will be used
- * @param  {bool} end        If true, the version will be addted just before the file extension
+ * @param  {bool}   end      If true, the version will be addted just before the file extension
  *                           Otherwise it will be placed before the first fullstip found in the filename
  * @return {string}          Filename with version
  */
@@ -210,7 +217,7 @@ function getVersionName(file, variable, end) {
 
   let version = getVersion((variable || extension)) || '';
 
-  return addVersionToFilename(file, version, end);
+  return _addVersionToFilename(file, version, end);
 
 }
 
@@ -219,7 +226,7 @@ function getVersionName(file, variable, end) {
  * @param  {string} file     [description]
  * @param  {string} variable Define the variable you want to increment.
  *                           If a variable is not defined the file extension will be used
- * @param  {bool} end        If true, the version will be addted just before the file extension
+ * @param  {bool}   end      If true, the version will be addted just before the file extension
  *                           Otherwise it will be placed before the first fullstip found in the filename
  * @return {string}          Filename with version
  */
@@ -229,36 +236,14 @@ function updateVersionName(file, variable, end) {
 
   let version = updateVersion((variable || extension)) || '';
 
-  return addVersionToFilename(file, version, end);
+  return _addVersionToFilename(file, version, end);
 
 }
 
 /**
- * Do some fancy regex stuff to place the version number within the filename string
- * @param {string} file    filename
- * @param {int}    version the version number you want to add
- * @param {bool}   end     If true, the version will be addted just before the file extension
- *                         Otherwise it will be placed before the first fullstip found in the filename
- */
-function addVersionToFilename(file, version, end) {
-  if ( typeof version !== 'undefined' ) {
-    version = '.v' + version;
-    if (typeof end == 'undefined' || end === true) {
-      return file.replace(/^([^.]*)(.*)/, '$1'+ version +'$2');
-    } else {
-      return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
-    }
-  } else {
-    return file;
-  }
-
-}
-
-
-/**
- * Delete a set amount of versions to avoid large archives
- * @param  {string} directory   The Original filename you want to manage. Don't include version number.
- * @param  {string} original  Set the original filename so the comparison can match files after the version number has be varified
+ * Delete a set amount of versionsed files.
+ * @param  {string} directory The Original filename you want to manage. Don't include the version number.
+ * @param  {string} original  Pass the original filename so the comparison can match files after the version number has be verified
  * @param  {int}    keep      The amount of versions you want to keep
  * @return {array}  Returns an array of the files that were deleted
  */
@@ -308,3 +293,28 @@ function deleteVersions(directory, original, keep) {
   return deleted;
 
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// Private functions
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Do some fancy regex stuff to place the version number within the filename string
+ * @param {string} file    filename
+ * @param {int}    version the version number you want to add
+ * @param {bool}   end     If true, the version will be addted just before the file extension
+ *                         Otherwise it will be placed before the first fullstip found in the filename
+ */
+function _addVersionToFilename(file, version, end) {
+  if ( typeof version !== 'undefined' ) {
+    version = '.v' + version;
+    if (typeof end == 'undefined' || end === true) {
+      return file.replace(/^([^.]*)(.*)/, '$1'+ version +'$2');
+    } else {
+      return file.replace(/(\.[\w\d_-]+)$/i, version+'$1');
+    }
+  } else {
+    return file;
+  }
+
+}

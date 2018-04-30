@@ -1,7 +1,7 @@
 {
   "name": "gulp-env-modify",
-  "version": "1.0.2",
-  "description": "Query, update, and version control your .env files.",
+  "version": "1.0.3",
+  "description": "Add, edit, delete and read variables from a .env file. There is also functionality to help manage version named files.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
