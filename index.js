@@ -6,7 +6,9 @@
 
 // Dependencies
 const fs = require('fs'),
-      path = require('path')
+      path = require('path'),
+      log = require('fancy-log'),
+      chalk = require('chalk')
 
 // Defaults
 let cached = [];
@@ -27,6 +29,7 @@ module.exports.updateVersion     = updateVersion;
 module.exports.updateVersionName = updateVersionName;
 module.exports.getVersionName    = getVersionName;
 module.exports.deleteVersions    = deleteVersions;
+module.exports.manage            = manage;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get .env file information
@@ -39,7 +42,7 @@ module.exports.deleteVersions    = deleteVersions;
  */
 function getFile(envPath) {
 
-  envPath = typeof envPath !== 'undefined' ? envPath : '.env';
+  envPath = typeof envPath !== 'undefined' && envPath != '' ? envPath : '.env';
 
   try {
 
@@ -60,10 +63,11 @@ function getFile(envPath) {
 /**
  * Get the .env file as an object
  * @see    https://github.com/motdotla/dotenv/blob/master/lib/main.js
+ * @param  {string} request Request a specific variable from the .env file instead of the full object
  * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
- * @return {object}
+ * @return {object | string}
  */
-function getData(envPath) {
+function getData(request, envPath) {
   try {
 
     if ( cached.data == null) {
@@ -100,6 +104,10 @@ function getData(envPath) {
         }
       })
 
+    }
+
+    if (typeof request !== 'undefined' && typeof cached.data[request.toUpperCase()] !== 'undefined') {
+      return cached.data[request.toUpperCase()];
     }
 
     return cached.data;
@@ -283,6 +291,12 @@ function deleteVersions(directory, original, keep) {
         for (var version in versions) {
           var deleteFile = directory + key.replace(/^([^.]*)(.*)/, '$1'+ '.v' +versions[version] +'$2');
           deleted.push(deleteFile);
+          try {
+            log(`${chalk.hex('#BB6475')("Deleting:")} ${chalk.redBright(deleteFile)}`);
+          } catch(e) {
+            console.log("Deleting: " + deleteFile);
+          }
+
           fs.unlinkSync(deleteFile);
         }
       }
@@ -292,6 +306,52 @@ function deleteVersions(directory, original, keep) {
   return deleted;
 
 };
+
+/**
+ * Combines and managines a range of version controlled taks.
+ * Includes a loop detection so avoid gulp watchers triggering on every set of task runs.
+ * Deletes old versions and manages name verioning.
+ * @param  {string}  directory    The Original filename you want to manage. Don't include the version number.
+ * @param  {string}  original     Pass the original filename so the comparison can match files after the version number has be verified
+ * @param  {string}  variable     Define the variable you want to increment.
+ * @param  {Boolean} increment    Define if the version name should be incremented or not
+ * @param  {int}     keep         The amount of versions you want to keep
+ * @return {string}               Final version name. Returns original if there was an error.
+ */
+var loopers = [];
+function manage() {
+
+  if ( typeof arguments[0] == 'object') {
+    // Destructure arguemnts. An associative object is checked first.
+    var { directory, original, variable, increment = true, keep = defaultKeep } = arguments[0];
+  } else {
+    // Otherwise apply the arguments in this order to these variables.
+    var [ directory, original, variable, increment = true, keep = defaultKeep ] = arguments;
+  }
+
+  let filename = original;
+
+  try {
+
+    if (!loopers.includes(original)) {
+
+      loopers.push(original);
+
+      filename = increment ? this.updateVersionName(original, variable) : this.getVersionName(original, variable);
+
+      this.deleteVersions(directory, original);
+
+    } else {
+
+      filename = this.getVersionName(original, variable);
+    }
+  } catch (e) {
+
+  }
+
+  return filename;
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Private functions

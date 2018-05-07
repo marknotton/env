@@ -34,7 +34,8 @@ Get the .env file content with all the variables and values passed into an objec
 
 `envmod.getData()`
 
-*First parameter can be the path to your .env file relative to the gulpfile.js*
+*First parameter can be a direct request for a variable.*
+*Second parameter can be the path to your .env file relative to the gulpfile.js*
 
 ------
 
