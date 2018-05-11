@@ -5,10 +5,11 @@
 'use strict'
 
 // Dependencies
-const fs = require('fs'),
-      path = require('path'),
-      log = require('fancy-log'),
-      chalk = require('chalk')
+const fs      = require('fs'),
+      path    = require('path'),
+      log     = require('fancy-log'),
+      chalk   = require('chalk'),
+      through = require("through2");
 
 // Defaults
 let cached = [];
@@ -30,6 +31,7 @@ module.exports.updateVersionName = updateVersionName;
 module.exports.getVersionName    = getVersionName;
 module.exports.deleteVersions    = deleteVersions;
 module.exports.manage            = manage;
+module.exports.streamedfiles              = streamedfiles;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get .env file information
@@ -337,20 +339,43 @@ function manage() {
 
       loopers.push(original);
 
-      filename = increment ? this.updateVersionName(original, variable) : this.getVersionName(original, variable);
+      filename = increment ? updateVersionName(original, variable) : getVersionName(original, variable);
 
-      this.deleteVersions(directory, original);
+      deleteVersions(directory, original);
 
     } else {
 
-      filename = this.getVersionName(original, variable);
+      filename = getVersionName(original, variable);
     }
+
   } catch (e) {
 
   }
 
   return filename;
 
+}
+
+function streamedfiles(css) {
+
+  var first = true;
+
+  return through.obj(function(file, enc, callback) {
+    var name = path.basename(file.path);
+    var arr = file.path.split('/');
+    var root = arr.indexOf(path.basename(file.base));
+
+    var oldBase = arr[root + 1];
+    if (oldBase !== 'maps') {
+      oldBase = manage(css, oldBase, 'css', first)
+      first = false;
+    }
+    arr[root + 1] = oldBase;
+    file.path = arr.join('/');
+    this.push(file);
+
+    callback();
+  })
 }
 
 ////////////////////////////////////////////////////////////////////////////////
