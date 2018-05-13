@@ -10,16 +10,16 @@ const fs      = require('fs'),
 
 // Defaults
 let cached = [];
-let defaultKeep = 5;
+
 let envFilePath = path.resolve(process.cwd(), '.env');
 
 // Data functions
-module.exports.getFile           = getFile;
-module.exports.getData           = getData;
+module.exports.getFile     = getFile;
+module.exports.getData     = getData;
 
 // Add / Get functions
-module.exports.setVariable       = setVariable;
-module.exports.getVariable       = getVariable;
+module.exports.setVariable = setVariable;
+module.exports.getVariable = getVariable;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get .env file information as a string
@@ -100,6 +100,7 @@ function getData(request, envPath) {
 
     }
 
+
     if (typeof request !== 'undefined' && typeof cached.data[request.toUpperCase()] !== 'undefined') {
       return cached.data[request.toUpperCase()];
     }
@@ -124,13 +125,15 @@ function getData(request, envPath) {
  */
 function setVariable(variable, value) {
 
-  cached.file = `${cached.file}\n${variable}="${value}"`;
-  cached.data[variable] = value;
+  if ( cached.data[variable] != value ) {
+    cached.file = `${cached.file}\n${variable}="${value}"`;
+    cached.data[variable] = value;
 
-  try {
-    fs.writeFileSync(envFilePath, cached.file || '');
-  } catch (e) {
-    return { error: e }
+    try {
+      fs.writeFileSync(envFilePath, cached.file || '');
+    } catch (e) {
+      return { error: e }
+    }
   }
 
 };
@@ -141,6 +144,7 @@ function setVariable(variable, value) {
  * @return {string}
  */
 function getVariable(variable) {
+
   if ( cached.data == null ) {
     getData();
   }
