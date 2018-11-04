@@ -1,6 +1,8 @@
-# Gulp Env Modify
+# Env Modify
 
 Add, edit, delete and read variables from a .env file.
+
+This was originally built with Gulp tasks streams in mind, but Gulp is not actually a requirement. This tool can used as a standalone node package.
 
 ### Installation
 ```

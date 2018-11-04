@@ -1,6 +1,6 @@
 {
   "name": "gulp-env-modify",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Add, edit, delete and read variables from a .env file.",
   "main": "index.js",
   "scripts": {

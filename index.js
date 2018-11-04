@@ -125,15 +125,26 @@ function getData(request, envPath) {
  */
 function setVariable(variable, value) {
 
-  if ( cached.data[variable] != value ) {
-    cached.file = `${cached.file}\n${variable}="${value}"`;
-    cached.data[variable] = value;
+	if ( typeof cached.data === 'undefined' ) {
+		getData();
+	}
 
-    try {
-      fs.writeFileSync(envFilePath, cached.file || '');
-    } catch (e) {
-      return { error: e }
-    }
+	if ( typeof cached.data[variable] !== 'undefined' ) {
+
+		cached.file = cached.file.replace(`${variable}="${cached.data[variable]}"`, `${variable}="${value}"`)
+
+	} else {
+
+		cached.file = `${cached.file}\n${variable}="${value}"`;
+
+	}
+
+  cached.data[variable] = value;
+
+  try {
+    fs.writeFileSync(envFilePath, cached.file || '');
+  } catch (e) {
+    return { error: e }
   }
 
 };
