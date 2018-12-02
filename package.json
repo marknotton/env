@@ -1,6 +1,6 @@
 {
-  "name": "gulp-env-modify",
-  "version": "1.0.8",
+  "name": "@marknotton/env",
+  "version": "1.1.0",
   "description": "Add, edit, delete and read variables from a .env file.",
   "main": "index.js",
   "scripts": {
@@ -8,16 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/marknotton/gulp-env-modify.git"
+    "url": "git+https://github.com/marknotton/env.git"
   },
   "keywords": [
-    "gulp",
-    ".env"
+    ".env",
+		"gulp-dotenv"
   ],
   "author": "Mark Notton",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/marknotton/gulp-env-modify/issues"
+    "url": "https://github.com/marknotton/env/issues"
   },
-  "homepage": "https://github.com/marknotton/gulp-env-modify"
+  "homepage": "https://github.com/marknotton/env"
 }

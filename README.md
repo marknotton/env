@@ -1,20 +1,16 @@
-# Env Modify
+# Env
+
+![Made For NPM](https://img.shields.io/badge/Made%20for-NPM-#CB3837.svg)
 
 Add, edit, delete and read variables from a .env file.
 
-This was originally built with Gulp tasks streams in mind, but Gulp is not actually a requirement. This tool can used as a standalone node package.
-
-### Installation
+## Installation
 ```
-npm i gulp-env-modify --save
+npm i @marknotton/env --save-dev
 ```
-### Setup
+```js
+const env = require('@marknotton/env');
 ```
-const envmod = require('gulp-env-modify')
-const env = envmod.getData()
-console.log(env)
-```
-------
 
 ## Data functions
 
@@ -26,8 +22,6 @@ Get the .env file contents as a string
 
 *First parameter can be the path to your .env file relative to the gulpfile.js*
 
-------
-
 ### Get Data [*object*]
 
 Get the .env file content with all the variables and values passed into an object
@@ -37,8 +31,6 @@ Get the .env file content with all the variables and values passed into an objec
 *First parameter can be a direct request for a variable.*
 *Second parameter can be the path to your .env file relative to the gulpfile.js*
 
-------
-
 ## Get & Set functions
 
 ### Set Variable
@@ -47,15 +39,11 @@ Add a variable and value to the .env file. Variable will be created if it isn't 
 
 `envmod.setVariable(variable, value)`
 
-------
-
 ### Get Variable [*string*]
 
 Get variable from .env file.
 
 `envmod.getVariable(variable)`
 
-------
-
-### Credit
-Couldn't have built this without [gulp-dotenv](https://github.com/pine/gulp-dotenv). Thank you.
+## Credit
+Couldn't have built this without [gulp-dotenv](https://github.com/pine/gulp-dotenv). Thank you!
