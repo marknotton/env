@@ -1,6 +1,6 @@
 {
   "name": "@marknotton/env",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Add, edit, delete and read variables from a .env file.",
   "main": "index.js",
   "scripts": {

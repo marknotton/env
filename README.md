@@ -45,6 +45,14 @@ Add a variable and value to the .env file. Variable will be created if it isn't 
 env.setVariable(variable, value)
 ```
 
+### Delete Variable [*string*]
+
+Delete variable from .env file.
+
+```js
+env.deleteVariable(variable)
+```
+
 ### Get Variable [*string*]
 
 Get variable from .env file.

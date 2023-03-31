@@ -1,10 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Env
-////////////////////////////////////////////////////////////////////////////////
-
-// =============================================================================
 // Settings
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 'use strict'
 
@@ -22,12 +18,13 @@ module.exports.getFile     = getFile;
 module.exports.getData     = getData;
 
 // Add / Get functions
-module.exports.setVariable = setVariable;
-module.exports.getVariable = getVariable;
+module.exports.setVariable    = setVariable;
+module.exports.getVariable    = getVariable;
+module.exports.deleteVariable = deleteVariable;
 
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 // Get .env file information as a string
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Get the .env file data as a string
@@ -54,9 +51,9 @@ function getFile(envPath) {
   }
 };
 
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 // Get .env file data as an object
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Get the .env file as an object
@@ -118,9 +115,9 @@ function getData(request, envPath) {
   }
 };
 
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 // Get and Add variables
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Set a variable and it's value
@@ -132,6 +129,12 @@ function setVariable(variable, value) {
 	if ( typeof cached.data === 'undefined' ) {
 		getData();
 	}
+
+  if (typeof(value) == 'undefined') {
+    value = ''
+  }
+
+  variable = variable.toUpperCase()
 
 	if ( typeof cached.data[variable] !== 'undefined' ) {
 
@@ -152,6 +155,29 @@ function setVariable(variable, value) {
   }
 
 };
+
+/**
+ * Delete a specific variable
+ * @param {string} variable Enter the variable you want to delete
+ */
+function deleteVariable(variable) {
+
+  if ( cached.data == null ) {
+    getData();
+  }
+
+  variable = variable.toUpperCase()
+
+  const regex = new RegExp(`^${variable}=.*$`, 'gm');
+  cached.file = cached.file.replace(regex, '');
+
+  try {
+    fs.writeFileSync(envFilePath, cached.file || '');
+  } catch (e) {
+    return { error: e }
+  }
+
+}
 
 /**
  * Get a specific variable
