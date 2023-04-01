@@ -53,6 +53,15 @@ Delete variable from .env file.
 env.deleteVariable(variable)
 ```
 
+### Toggle Variable [*string*]
+
+Add a 'true' boolean to the given vairable, or remove it entirely if it's false. 
+
+```js
+env.toggleBooleanVariable(variable, true)  // Add's VARIABLE=true 
+env.toggleBooleanVariable(variable, false) // Removes VARIABLE=true entirely 
+```
+
 ### Get Variable [*string*]
 
 Get variable from .env file.

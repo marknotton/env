@@ -18,9 +18,10 @@ module.exports.getFile     = getFile;
 module.exports.getData     = getData;
 
 // Add / Get functions
-module.exports.setVariable    = setVariable;
-module.exports.getVariable    = getVariable;
-module.exports.deleteVariable = deleteVariable;
+module.exports.setVariable           = setVariable;
+module.exports.getVariable           = getVariable;
+module.exports.deleteVariable        = deleteVariable;
+module.exports.toggleBooleanVariable = toggleBooleanVariable;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get .env file information as a string
@@ -177,6 +178,19 @@ function deleteVariable(variable) {
     return { error: e }
   }
 
+}
+
+/**
+ * Add a 'true' boolean value to the given vairable, or remove it entirely. 
+ * @param {string} variable Enter the variable you want to toggle 
+ * @param {boolean} boolean 
+ */
+function toggleBooleanVariable(variable, boolean) {
+  if ( boolean ) {
+    setVariable(variable, true)
+  } else {
+    deleteVariable(variable)
+  }
 }
 
 /**
