@@ -13,16 +13,6 @@ let cached = [];
 
 let envFilePath = path.resolve(process.cwd(), '.env');
 
-// Data functions
-module.exports.getFile     = getFile;
-module.exports.getData     = getData;
-
-// Add / Get functions
-module.exports.setVariable           = setVariable;
-module.exports.getVariable           = getVariable;
-module.exports.deleteVariable        = deleteVariable;
-module.exports.toggleBooleanVariable = toggleBooleanVariable;
-
 ////////////////////////////////////////////////////////////////////////////////
 // Get .env file information as a string
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,4 +199,31 @@ function getVariable(variable) {
   } else if (variable in cached.data) {
     return cached.data[variable];
   }
+};
+
+
+/**
+ * Check is a specific property exists
+ * @param  {string} variable Enter the variable you want to check
+ * @return {string}
+ */
+function hasVariable(variable) {
+
+  if ( cached.data == null ) {
+    getData();
+  }
+
+  return variable.toUpperCase() in cached.data || variable in cached.data
+
+};
+
+module.exports = {
+  ...getData(),
+  getFile,
+  getData,
+  setVariable,
+  deleteVariable,
+  toggleBooleanVariable,
+  getVariable,
+  hasVariable,
 };

@@ -70,5 +70,11 @@ Get variable from .env file.
 env.getVariable(variable)
 ```
 
-## Credit
-Couldn't have built this without [gulp-dotenv](https://github.com/pine/gulp-dotenv). Thank you!
+### Has Variable [*bool*]
+
+Check if a variable exists.
+
+```js
+env.hasVariable(variable)
+```
+
