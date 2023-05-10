@@ -61,7 +61,9 @@ function getData(request, envPath) {
       cached.data = [];
 
       // convert Buffers before splitting into lines and processing
-      getFile(envPath).toString().split('\n').forEach(function (line) {
+      getFile(envPath).toString().split('\n').forEach(function (line, index) {
+
+        
         // matching "KEY' and 'VAL' in 'KEY=VAL'
         const keyValueArr = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/)
         // matched?
@@ -97,6 +99,7 @@ function getData(request, envPath) {
       return cached.data[request.toUpperCase()];
     }
 
+    console.log(cached.data)
     return cached.data;
 
   } catch (e) {
@@ -153,14 +156,26 @@ function setVariable(variable, value) {
  */
 function deleteVariable(variable) {
 
-  if ( cached.data == null ) {
+  if (cached.data == null) {
     getData();
   }
 
-  variable = variable.toUpperCase()
+  variable = variable.toUpperCase();
 
-  const regex = new RegExp(`^${variable}=.*$`, 'gm');
-  cached.file = cached.file.replace(regex, '');
+  let lineNumber = null;
+
+  const lines = cached.file.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(variable + '=')) {
+      lineNumber = i;
+    }
+  }
+
+  if (lineNumber) {
+    const lines = cached.file.split(/\r?\n/);
+    lines.splice(lineNumber, 1);
+    cached.file = lines.join('\n');
+  }
 
   try {
     fs.writeFileSync(envFilePath, cached.file || '');
