@@ -99,7 +99,6 @@ function getData(request, envPath) {
       return cached.data[request.toUpperCase()];
     }
 
-    console.log(cached.data)
     return cached.data;
 
   } catch (e) {
