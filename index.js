@@ -1,69 +1,27 @@
-////////////////////////////////////////////////////////////////////////////////
-// Settings
-////////////////////////////////////////////////////////////////////////////////
+const fs   = require('fs')
+const path = require('path')
 
-'use strict'
+class Env {
 
-// Dependencies
-const fs      = require('fs'),
-      path    = require('path');
+  data = {}
+  fileContents = ''
+  envFilePath = ''
 
-// Defaults
-let cached = [];
+  constructor(envPath = '.env') {
 
-let envFilePath = path.resolve(process.cwd(), '.env');
+    try {
+      // Get the contents of the .env file and store it as a string file
+      this.envFilePath = path.resolve(process.cwd(), envPath);
 
-////////////////////////////////////////////////////////////////////////////////
-// Get .env file information as a string
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Get the .env file data as a string
- * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
- * @return {string}
- */
-function getFile(envPath) {
-
-  envPath = typeof envPath !== 'undefined' && envPath != '' ? envPath : '.env';
-
-  try {
-
-    if ( cached.file == null) {
-      envFilePath = path.resolve(process.cwd(), envPath);
-      cached.file = fs.readFileSync(envFilePath, { encoding : 'utf8'})
-    }
-
-    return cached.file;
-
-  } catch (e) {
-
-    return { error: e }
-
-  }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Get .env file data as an object
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Get the .env file as an object
- * @see    https://github.com/motdotla/dotenv/blob/master/lib/main.js
- * @param  {string} request Request a specific variable from the .env file instead of the full object
- * @param  {string} envPath Add a relative path to the .env file. Defaults to root.
- * @return {object | string}
- */
-function getData(request, envPath) {
-  try {
-
-    if ( cached.data == null) {
-
-      cached.data = [];
+      if (!fs.existsSync(this.envFilePath)) {
+        fs.writeFileSync(this.envFilePath, '');
+      }
+  
+      this.fileContents = fs.readFileSync(this.envFilePath, { encoding : 'utf8'}).toString()
 
       // convert Buffers before splitting into lines and processing
-      getFile(envPath).toString().split('\n').forEach(function (line, index) {
+      this.fileContents.split('\n').forEach(line => {
 
-        
         // matching "KEY' and 'VAL' in 'KEY=VAL'
         const keyValueArr = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/)
         // matched?
@@ -82,162 +40,122 @@ function getData(request, envPath) {
           // remove any surrounding quotes and extra spaces
           value = value.replace(/(^['"]|['"]$)/g, '').trim()
 
-          cached.data[key] = value
+          this.data[key] = value
         }
       })
+      return;
 
-      Object.keys(cached.data).forEach(function (key) {
-        if (!process.env.hasOwnProperty(key)) {
-          process.env[key] = cached.data[key]
-        }
-      })
+    } catch (e) {
+      return { error: e }
+    }
+  }
+
+  /**
+   * Set a variable and it's value
+   * @param  {string} variable The variable name
+   * @param  {string | number | boolean | null} value    The variable value
+   */
+  set(variable, value) {
+
+    if (typeof(value) == 'undefined') {
+      value = ''
+    }
+
+    variable = variable.toUpperCase()
+
+    if ( typeof this.data[variable] !== 'undefined' ) {
+
+      this.fileContents = this.fileContents.replace(`${variable}="${this.data[variable]}"`, `${variable}="${value}"`)
+
+    } else {
+
+      this.fileContents = `${this.fileContents}\n${variable}="${value}"`;
 
     }
 
+    this.data[variable] = value;
 
-    if (typeof request !== 'undefined' && typeof cached.data[request.toUpperCase()] !== 'undefined') {
-      return cached.data[request.toUpperCase()];
+    try {
+      fs.writeFileSync(this.envFilePath, this.fileContents || '');
+      return;
+    } catch (e) {
+      return { error: e }
     }
 
-    return cached.data;
-
-  } catch (e) {
-
-    return { error: e }
-
   }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Get and Add variables
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Set a variable and it's value
- * @param  {string} variable The variable name
- * @param  {mixed}  value    The variable value
- */
-function setVariable(variable, value) {
-
-	if ( typeof cached.data === 'undefined' ) {
-		getData();
-	}
-
-  if (typeof(value) == 'undefined') {
-    value = ''
-  }
-
-  variable = variable.toUpperCase()
-
-	if ( typeof cached.data[variable] !== 'undefined' ) {
-
-		cached.file = cached.file.replace(`${variable}="${cached.data[variable]}"`, `${variable}="${value}"`)
-
-	} else {
-
-		cached.file = `${cached.file}\n${variable}="${value}"`;
-
-	}
-
-  cached.data[variable] = value;
-
-  try {
-    fs.writeFileSync(envFilePath, cached.file || '');
-  } catch (e) {
-    return { error: e }
-  }
-
-};
 
 /**
  * Delete a specific variable
  * @param {string} variable Enter the variable you want to delete
  */
-function deleteVariable(variable) {
+  delete(variable) {
 
-  if (cached.data == null) {
-    getData();
+    variable = variable.toUpperCase();
+
+    let lineNumber = null;
+
+    const lines = this.fileContents.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(variable + '=')) {
+        lineNumber = i;
+      }
+    }
+
+    if (lineNumber !== null) {
+      const lines = this.fileContents.split(/\r?\n/);
+      lines.splice(lineNumber, 1);
+      this.fileContents = lines.join('\n');
+    }
+
+    try {
+      // If the file is now empty, delete it. Otherwise, write the updated contents.
+      if (this.fileContents.trim() === '') {
+        fs.unlinkSync(this.envFilePath);
+      } else {
+        fs.writeFileSync(this.envFilePath, this.fileContents || '');
+      }
+      return;
+    } catch (e) {
+      return { error: e }
+    }
+
   }
 
-  variable = variable.toUpperCase();
-
-  let lineNumber = null;
-
-  const lines = cached.file.split(/\r?\n/);
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith(variable + '=')) {
-      lineNumber = i;
+  /**
+   * Add a 'true' boolean value to the given vairable, or remove it entirely. 
+   * @param {string} variable Enter the variable you want to toggle 
+   * @param {boolean} boolean 
+   */
+  toggleBoolean(variable, boolean) {
+    if ( boolean ) {
+      this.set(variable, true)
+    } else {
+      this.delete(variable)
     }
   }
 
-  if (lineNumber) {
-    const lines = cached.file.split(/\r?\n/);
-    lines.splice(lineNumber, 1);
-    cached.file = lines.join('\n');
+  /**
+   * Get a specific variable
+   * @param  {string} variable Enter the variable you want to get
+   * @return {string | undefined}
+   */
+  get(variable) {
+    if (variable.toUpperCase() in this.data ) {
+      return this.data[variable.toUpperCase()];
+    } else if (variable in this.data) {
+      return this.data[variable];
+    }
+    return undefined;
   }
 
-  try {
-    fs.writeFileSync(envFilePath, cached.file || '');
-  } catch (e) {
-    return { error: e }
-  }
-
-}
-
-/**
- * Add a 'true' boolean value to the given vairable, or remove it entirely. 
- * @param {string} variable Enter the variable you want to toggle 
- * @param {boolean} boolean 
- */
-function toggleBooleanVariable(variable, boolean) {
-  if ( boolean ) {
-    setVariable(variable, true)
-  } else {
-    deleteVariable(variable)
+  /**
+   * Check is a specific property exists
+   * @param  {string} variable Enter the variable you want to check
+   * @return {string}
+   */
+  has(variable) {
+    return variable.toUpperCase() in this.data || variable in this.data
   }
 }
 
-/**
- * Get a specific variable
- * @param  {string} variable Enter the variable you want to get
- * @return {string}
- */
-function getVariable(variable) {
-
-  if ( cached.data == null ) {
-    getData();
-  }
-
-  if (variable.toUpperCase() in cached.data ) {
-    return cached.data[variable.toUpperCase()];
-  } else if (variable in cached.data) {
-    return cached.data[variable];
-  }
-};
-
-
-/**
- * Check is a specific property exists
- * @param  {string} variable Enter the variable you want to check
- * @return {string}
- */
-function hasVariable(variable) {
-
-  if ( cached.data == null ) {
-    getData();
-  }
-
-  return variable.toUpperCase() in cached.data || variable in cached.data
-
-};
-
-module.exports = {
-  ...getData(),
-  getFile,
-  getData,
-  setVariable,
-  deleteVariable,
-  toggleBooleanVariable,
-  getVariable,
-  hasVariable,
-};
+module.exports = Env

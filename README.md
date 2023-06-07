@@ -1,3 +1,4 @@
+
 # Env
 
 ![Made For NPM](https://img.shields.io/badge/Made%20for-NPM-orange.svg)
@@ -9,72 +10,63 @@ Add, edit, delete and read variables from a .env file.
 npm i @marknotton/env --save-dev
 ```
 ```js
-const env = require('@marknotton/env');
+import Env from '@marknotton/env'
+
 ```
 
-## Data functions
+## Usage
 
-### Get File [*string*]
-
-Get the .env file contents as a string
-
-```js
-env.getFile()
+Basic usage
+```
+const env = new Env()
 ```
 
-*First parameter can be the path to your .env file relative to the gulpfile.js*
+You can defined a different .env file by passing in a string that is relative path.
 
-### Get Data [*object*]
-
-Get the .env file content with all the variables and values passed into an object
-
-```js
-env.getData()
+ ```
+const env = new Env('.env.example')
 ```
 
-*First parameter can be a direct request for a variable.*
-*Second parameter can be the path to your .env file relative to the gulpfile.js*
-
-## Get & Set functions
+## Methods
 
 ### Set Variable
 
 Add a variable and value to the .env file. Variable will be created if it isn't found. It will be overwritten if it does exists.
 
 ```js
-env.setVariable(variable, value)
+env.set(variable, value)
 ```
 
-### Delete Variable [*string*]
+### Delete Variable
 
 Delete variable from .env file.
 
 ```js
-env.deleteVariable(variable)
+env.delete(variable)
 ```
 
-### Toggle Variable [*string*]
+### Toggle Variable
 
 Add a 'true' boolean to the given vairable, or remove it entirely if it's false. 
 
 ```js
-env.toggleBooleanVariable(variable, true)  // Add's VARIABLE=true 
-env.toggleBooleanVariable(variable, false) // Removes VARIABLE=true entirely 
+env.toggleBoolean(variable, true)  // Add's VARIABLE=true 
+env.toggleBoolean(variable, false) // Removes VARIABLE=true entirely 
 ```
 
-### Get Variable [*string*]
+### Get Variable
 
 Get variable from .env file.
 
 ```js
-env.getVariable(variable)
+env.get(variable)
 ```
 
-### Has Variable [*bool*]
+### Has Variable
 
 Check if a variable exists.
 
 ```js
-env.hasVariable(variable)
+env.has(variable)
 ```
 
